@@ -1,10 +1,12 @@
 use crate::bytecode::Instruction;
 use crate::ast::Literal;
+use std::sync::Arc;
+use smallvec::SmallVec;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Number(i64),
-    String(String),
+    String(Arc<str>),
     Boolean(bool),
     Null,
 }
@@ -21,15 +23,17 @@ impl std::fmt::Display for Value {
 }
 
 impl Value {
+    #[inline(always)]
     fn from_literal(literal: Literal) -> Self {
         match literal {
             Literal::Number(n) => Value::Number(n),
-            Literal::String(s) => Value::String(s),
+            Literal::String(s) => Value::String(Arc::from(s)),
             Literal::Boolean(b) => Value::Boolean(b),
             Literal::Null => Value::Null,
         }
     }
 
+    #[inline(always)]
     fn expect_boolean(self) -> Result<bool, String> {
         match self {
             Value::Boolean(b) => Ok(b),
@@ -39,14 +43,14 @@ impl Value {
 }
 
 pub struct VM {
-    stack: Vec<Value>,
+    stack: SmallVec<[Value; 256]>,
     globals: Vec<Value>,
 }
 
 impl VM {
     pub fn new() -> Self {
         VM {
-            stack: Vec::new(),
+            stack: SmallVec::new(),
             globals: Vec::new(),
         }
     }
@@ -55,14 +59,44 @@ impl VM {
         let mut ip = 0;
 
         while ip < instructions.len() {
+            // Hottest instructions first for better CPU branch prediction
             match &instructions[ip] {
-                Instruction::Constant(literal) => {
-                    self.stack.push(Value::from_literal(literal.clone()));
+                // Most frequent in loops
+                Instruction::AddGlobal(index, rhs) => {
+                    if *index >= self.globals.len() {
+                        return Err(format!("AddGlobal: global slot {} is not initialized", index));
+                    }
+                    match &self.globals[*index] {
+                        Value::Number(n) => self.globals[*index] = Value::Number(n + rhs),
+                        other => return Err(format!("AddGlobal expects number, found {:?}", other)),
+                    }
                     ip += 1;
                 }
                 Instruction::LoadGlobal(index) => {
                     let value = self.globals.get(*index).cloned().unwrap_or(Value::Null);
                     self.stack.push(value);
+                    ip += 1;
+                }
+                Instruction::JumpIfFalse(target) => {
+                    let condition = self.pop()?;
+                    let value = condition.expect_boolean()?;
+                    if !value {
+                        ip = *target;
+                    } else {
+                        ip += 1;
+                    }
+                }
+                Instruction::Jump(target) => {
+                    ip = *target;
+                }
+                Instruction::IncGlobal(index) => {
+                    if *index >= self.globals.len() {
+                        return Err(format!("IncGlobal: global slot {} is not initialized", index));
+                    }
+                    match &self.globals[*index] {
+                        Value::Number(n) => self.globals[*index] = Value::Number(n + 1),
+                        other => return Err(format!("IncGlobal expects number, found {:?}", other)),
+                    }
                     ip += 1;
                 }
                 Instruction::StoreGlobal(index) => {
@@ -71,6 +105,11 @@ impl VM {
                         self.globals.resize(*index + 1, Value::Null);
                     }
                     self.globals[*index] = value;
+                    ip += 1;
+                }
+                // Less frequent instructions
+                Instruction::Constant(literal) => {
+                    self.stack.push(Value::from_literal(literal.clone()));
                     ip += 1;
                 }
                 Instruction::Add => {
@@ -141,26 +180,6 @@ impl VM {
                             self.stack.push(Value::Number(l / r));
                         }
                         (l, r) => return Err(format!("DivideInt expects numbers, found {:?} and {:?}", l, r)),
-                    }
-                    ip += 1;
-                }
-                Instruction::IncGlobal(index) => {
-                    if *index >= self.globals.len() {
-                        return Err(format!("IncGlobal: global slot {} is not initialized", index));
-                    }
-                    match self.globals[*index].clone() {
-                        Value::Number(n) => self.globals[*index] = Value::Number(n + 1),
-                        other => return Err(format!("IncGlobal expects number, found {:?}", other)),
-                    }
-                    ip += 1;
-                }
-                Instruction::AddGlobal(index, rhs) => {
-                    if *index >= self.globals.len() {
-                        return Err(format!("AddGlobal: global slot {} is not initialized", index));
-                    }
-                    match self.globals[*index].clone() {
-                        Value::Number(n) => self.globals[*index] = Value::Number(n + rhs),
-                        other => return Err(format!("AddGlobal expects number, found {:?}", other)),
                     }
                     ip += 1;
                 }
@@ -235,36 +254,30 @@ impl VM {
                     self.pop()?;
                     ip += 1;
                 }
-                Instruction::Jump(target) => {
-                    ip = *target;
-                }
-                Instruction::JumpIfFalse(target) => {
-                    let condition = self.pop()?;
-                    let value = condition.expect_boolean()?;
-                    if !value {
-                        ip = *target;
-                    } else {
-                        ip += 1;
-                    }
-                }
             }
         }
 
         Ok(())
     }
 
+    #[inline(always)]
     fn pop(&mut self) -> Result<Value, String> {
         self.stack.pop().ok_or_else(|| "Stack underflow".to_string())
     }
 
+    #[inline(always)]
     fn add_values(&self, left: Value, right: Value) -> Result<Value, String> {
         match (left, right) {
             (Value::Number(l), Value::Number(r)) => Ok(Value::Number(l + r)),
-            (Value::String(l), Value::String(r)) => Ok(Value::String(format!("{}{}", l, r))),
+            (Value::String(l), Value::String(r)) => {
+                let concatenated = format!("{}{}", l, r);
+                Ok(Value::String(Arc::from(concatenated)))
+            }
             (l, r) => Err(format!("Add operation requires two numbers or two strings, found {:?} and {:?}", l, r)),
         }
     }
 
+    #[inline(always)]
     fn numeric_op<F>(&self, left: Value, right: Value, op: F) -> Result<Value, String>
     where
         F: FnOnce(i64, i64) -> Result<i64, String>,
@@ -275,6 +288,7 @@ impl VM {
         }
     }
 
+    #[inline(always)]
     fn compare_numeric<F>(&self, left: Value, right: Value, comparator: F) -> Result<bool, String>
     where
         F: FnOnce(i64, i64) -> bool,

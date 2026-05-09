@@ -19,7 +19,41 @@ impl Compiler {
         for statement in statements {
             self.compile_statement(statement)?;
         }
+        // Apply constant folding optimization
+        self.instructions = Self::fold_constants(self.instructions);
         Ok(self.instructions)
+    }
+
+    /// Fold constant expressions at compile time
+    fn fold_constants(mut instructions: Bytecode) -> Bytecode {
+        let mut i = 0;
+        while i < instructions.len().saturating_sub(2) {
+            // Pattern: Constant(a), Constant(b), BinaryOp
+            if let (
+                Instruction::Constant(crate::ast::Literal::Number(a)),
+                Instruction::Constant(crate::ast::Literal::Number(b)),
+                binary_op,
+            ) = (&instructions[i], &instructions[i + 1], &instructions[i + 2])
+            {
+                let folded = match binary_op {
+                    Instruction::Add => Some(a + b),
+                    Instruction::Subtract => Some(a - b),
+                    Instruction::Multiply => Some(a * b),
+                    Instruction::Divide if *b != 0 => Some(a / b),
+                    _ => None,
+                };
+
+                if let Some(result) = folded {
+                    instructions[i] = Instruction::Constant(crate::ast::Literal::Number(result));
+                    instructions.remove(i + 1);
+                    instructions.remove(i + 1);
+                    continue;
+                }
+            }
+
+            i += 1;
+        }
+        instructions
     }
 
     fn emit(&mut self, instruction: Instruction) -> usize {

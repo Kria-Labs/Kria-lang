@@ -6,3 +6,4 @@ description = "Kria programming language"
 authors = ["Piotriox"]
 
 [dependencies]
+smallvec = "1.11"
