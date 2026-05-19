@@ -1,0 +1,6 @@
+bench_arithmetic: .103467656s - Output: 0
+bench_conditionals: .062612675s - Output: 160004
+bench_fibonacci: .135999754s - Output: 53
+bench_functions: .068687278s - Output: 16
+bench_loop_optimized: .049207981s - Output: 1000000
+bench_nested_loops: .032651979s - Output: 90000

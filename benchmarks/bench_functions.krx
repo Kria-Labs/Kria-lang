@@ -1,0 +1,26 @@
+// Benchmark: Function Calls
+// Tests function call overhead
+
+fn add(a, b) {
+    return a + b
+}
+
+fn multiply(x, y) {
+    return x * y
+}
+
+fn calculate(a, b, c) {
+    set sum = add(a, b)
+    set prod = multiply(sum, c)
+    return prod
+}
+
+set result = 0
+set i = 0
+
+while (i < 10000) {
+    set result = calculate(5, 3, 2)
+    set i = i + 1
+}
+
+print(result)

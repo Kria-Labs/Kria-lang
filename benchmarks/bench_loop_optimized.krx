@@ -1,0 +1,10 @@
+// Benchmark: Pure Loop Performance (Optimized)
+// Tests the optimized loop-increment instruction
+
+set counter = 0
+
+while (counter < 1000000) {
+    set counter = counter + 1
+}
+
+print(counter)

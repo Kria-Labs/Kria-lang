@@ -1,0 +1,26 @@
+// Benchmark: Conditional Branches
+// Tests if/else statement performance
+
+set i = 0
+set count = 0
+
+while (i < 50000) {
+    if (i > 25000) {
+        if (i > 40000) {
+            set count = count + 1
+        } elseif (i > 30000) {
+            set count = count + 2
+        } else {
+            set count = count + 3
+        }
+    } else {
+        if (i < 10000) {
+            set count = count + 4
+        } else {
+            set count = count + 5
+        }
+    }
+    set i = i + 1
+}
+
+print(count)

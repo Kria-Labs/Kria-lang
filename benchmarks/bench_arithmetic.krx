@@ -1,0 +1,14 @@
+// Benchmark: Arithmetic Operations
+// Tests basic arithmetic performance
+set result = 0
+set i = 0
+
+while (i < 100000) {
+    set result = result + 1
+    set result = result * 2
+    set result = result / 2
+    set result = result - 1
+    set i = i + 1
+}
+
+print(result)
