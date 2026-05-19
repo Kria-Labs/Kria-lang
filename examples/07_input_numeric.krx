@@ -1,0 +1,57 @@
+print("=== Sayısal Input Örnekleri ===")
+
+print("Bir tam sayı girin:")
+set number = int()
+print("Girdiğiniz sayı: ")
+print(number)
+
+print("Sayı ile 10 farkı:")
+print(number - 10)
+
+print("Sayının 2 katı:")
+set doubled = number * 2
+print(doubled)
+
+print("İlk sayı:")
+set a = int()
+print("İkinci sayı:")
+set b = int()
+
+set total = a + b
+print("Toplam: ")
+print(total)
+
+set product = a * b
+print("Çarpım: ")
+print(product)
+
+print("Bir ondalık sayı girin:")
+set float_num = float()
+print("Girdiğiniz ondalık sayı: ")
+print(float_num)
+
+set float_doubled = float_num * 2
+print("2 katı: ")
+print(float_doubled)
+
+print("Taban girin:")
+set base = int()
+print("Üs girin:")
+set exp = int()
+
+set result = base * base
+set counter = 2
+while (counter < exp) {
+    set result = result * base
+    set counter = counter + 1
+}
+print("Sonuç: ")
+print(result)
+
+print("İlk ondalık:")
+set x = float()
+print("İkinci ondalık:")
+set y = float()
+
+print("Toplamları: ")
+print(x + y)

@@ -32,6 +32,9 @@ pub const OP_CALL_FUNCTION: u8 = 27;            // Call function: num_args
 pub const OP_RETURN: u8 = 28;                    // Return from function
 pub const OP_LOAD_LOCAL: u8 = 29;               // Load local variable: frame_offset
 pub const OP_STORE_LOCAL: u8 = 30;              // Store local variable: frame_offset
+pub const OP_INPUT_STRING: u8 = 31;             // Read string from stdin
+pub const OP_INPUT_INT: u8 = 32;                // Read integer from stdin
+pub const OP_INPUT_FLOAT: u8 = 33;              // Read float from stdin
 
 pub struct Bytecode {
     pub code: Vec<u8>,

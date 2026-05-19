@@ -1,0 +1,112 @@
+print("=== İnteraktif Programlar ===")
+
+print("--- Basit Hesap Makinesi ---")
+print("İlk sayı:")
+set num1 = int()
+print("İkinci sayı:")
+set num2 = int()
+
+set sum = num1 + num2
+set product = num1 * num2
+set diff = num1 - num2
+set div = num1 / num2
+
+print("Toplam: ")
+print(sum)
+print("Çarpım: ")
+print(product)
+print("Fark: ")
+print(diff)
+print("Bölüm: ")
+print(div)
+
+print("--- Yaş Kategorilendirme ---")
+print("Yaşınız:")
+set age = int()
+
+if (age < 13) {
+    print("Çocuk")
+} else {
+    if (age < 18) {
+        print("Ergen")
+    } else {
+        if (age < 65) {
+            print("Yetişkin")
+        } else {
+            print("Yaşlı")
+        }
+    }
+}
+
+print("--- Şifre Kontrolü ---")
+print("Şifreyi girin:")
+set password = input
+
+if (password == "kria123") {
+    print("Doğru şifre!")
+} else {
+    print("Yanlış şifre!")
+}
+
+print("--- Sayı Tahmin ---")
+print("Bir sayı düşün (1-10 arası):")
+set secret = int()
+
+set guess = 0
+set attempts = 0
+
+while (guess != secret) {
+    print("Tahmininiz: ")
+    set guess = int()
+    set attempts = attempts + 1
+    
+    if (guess == secret) {
+        print("Doğru! ")
+        print(attempts)
+        print(" denemede buldunuz!")
+    } else {
+        if (guess < secret) {
+            print("Daha büyük bir sayı deneyin")
+        } else {
+            print("Daha küçük bir sayı deneyin")
+        }
+    }
+}
+
+print("--- Kare Hesaplama ---")
+print("Bir sayı girin:")
+set number = int()
+
+fn square(n) {
+    return n * n
+}
+
+set squared = square(number)
+print("Karesi: ")
+print(squared)
+
+print("--- Pozitif/Negatif Kontrol ---")
+print("Bir sayı girin:")
+set value = int()
+
+if (value > 0) {
+    print("Pozitif")
+} else {
+    if (value < 0) {
+        print("Negatif")
+    } else {
+        print("Sıfır")
+    }
+}
+
+print("--- Çarpım Tablosu ---")
+print("Hangi sayının tablosunu görmek istiyorsunuz?")
+set table_num = int()
+
+set multiplier = 1
+print("--- Çarpım Tablosu ---")
+while (multiplier <= 10) {
+    set result = table_num * multiplier
+    print(result)
+    set multiplier = multiplier + 1
+}

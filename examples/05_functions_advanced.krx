@@ -1,0 +1,130 @@
+print("=== İleri Seviye Fonksiyonlar ===")
+
+fn sum_range(start, end) {
+    set total = 0
+    set i = start
+    while (i <= end) {
+        set total = total + i
+        set i = i + 1
+    }
+    return total
+}
+
+print("1 ile 100 arasındaki toplam: ")
+print(sum_range(1, 100))
+
+fn factorial(n) {
+    if (n <= 1) {
+        return 1
+    } else {
+        set prev = n - 1
+        set prev_factorial = factorial(prev)
+        return n * prev_factorial
+    }
+}
+
+print("5! = ")
+print(factorial(5))
+
+fn fibonacci(n) {
+    if (n <= 1) {
+        return n
+    } else {
+        set n1 = n - 1
+        set n2 = n - 2
+        set fib_n1 = fibonacci(n1)
+        set fib_n2 = fibonacci(n2)
+        return fib_n1 + fib_n2
+    }
+}
+
+print("Fibonacci(10) = ")
+print(fibonacci(10))
+
+fn count_digits(n) {
+    if (n == 0) {
+        return 1
+    }
+    set count = 0
+    set num = n
+    while (num != 0) {
+        set count = count + 1
+        set num = num / 10
+    }
+    return count
+}
+
+print("123456 kaç hane? ")
+print(count_digits(123456))
+
+fn apply_operation(a, b, op) {
+    if (op == 1) {
+        return a + b
+    } else {
+        if (op == 2) {
+            return a - b
+        } else {
+            if (op == 3) {
+                return a * b
+            } else {
+                return a / b
+            }
+        }
+    }
+}
+
+print("10 + 5 = ")
+print(apply_operation(10, 5, 1))
+
+print("10 - 5 = ")
+print(apply_operation(10, 5, 2))
+
+print("10 * 5 = ")
+print(apply_operation(10, 5, 3))
+
+print("10 / 5 = ")
+print(apply_operation(10, 5, 4))
+
+fn filter_even_sum(limit) {
+    set sum = 0
+    set i = 2
+    while (i <= limit) {
+        set sum = sum + i
+        set i = i + 2
+    }
+    return sum
+}
+
+print("1'den 50'ye çift sayıların toplamı: ")
+print(filter_even_sum(50))
+
+fn min(a, b) {
+    if (a < b) {
+        return a
+    } else {
+        return b
+    }
+}
+
+fn max(a, b) {
+    if (a > b) {
+        return a
+    } else {
+        return b
+    }
+}
+
+fn clamp(value, minimum, maximum) {
+    set clamped = max(value, minimum)
+    set clamped = min(clamped, maximum)
+    return clamped
+}
+
+print("Clamp 150 (0-100 aralığında): ")
+print(clamp(150, 0, 100))
+
+print("Clamp -10 (0-100 aralığında): ")
+print(clamp(-10, 0, 100))
+
+print("Clamp 50 (0-100 aralığında): ")
+print(clamp(50, 0, 100))

@@ -420,6 +420,43 @@ impl VM {
                 OP_POP => {
                     self.pop()?;
                 }
+                OP_INPUT_STRING => {
+                    let mut buffer = String::new();
+                    std::io::stdin().read_line(&mut buffer)
+                        .map_err(|e| format!("Input error: {}", e))?;
+                    // Remove trailing newline
+                    if buffer.ends_with('\n') {
+                        buffer.pop();
+                        if buffer.ends_with('\r') {
+                            buffer.pop();
+                        }
+                    }
+                    self.stack.push(Value::String(Arc::from(buffer)));
+                }
+                OP_INPUT_INT => {
+                    let mut buffer = String::new();
+                    std::io::stdin().read_line(&mut buffer)
+                        .map_err(|e| format!("Input error: {}", e))?;
+                    let trimmed = buffer.trim();
+                    let num = trimmed.parse::<i64>()
+                        .map_err(|_| format!("Invalid integer input: '{}'", trimmed))?;
+                    self.stack.push(Value::Number(num));
+                }
+                OP_INPUT_FLOAT => {
+                    let mut buffer = String::new();
+                    std::io::stdin().read_line(&mut buffer)
+                        .map_err(|e| format!("Input error: {}", e))?;
+                    let trimmed = buffer.trim();
+                    // Try parsing as float, fallback to int
+                    let num = if let Ok(f) = trimmed.parse::<f64>() {
+                        f as i64  // Store as i64 (no native float support)
+                    } else if let Ok(i) = trimmed.parse::<i64>() {
+                        i
+                    } else {
+                        return Err(format!("Invalid number input: '{}'", trimmed));
+                    };
+                    self.stack.push(Value::Number(num));
+                }
                 _ => return Err(format!("Unknown opcode: {}", opcode)),
             }
         }

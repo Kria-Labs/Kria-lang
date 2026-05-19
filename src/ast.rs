@@ -45,6 +45,14 @@ pub enum Expression {
         params: Vec<String>,
         body: Vec<Statement>,
     },
+    Input(InputType),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum InputType {
+    String,
+    Int,
+    Float,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -303,13 +303,29 @@ impl Compiler {
                 self.emit_constant(val);
             }
             Expression::Identifier(name) => {
-                let (is_local, index) = self.resolve_identifier(name)?;
-                if is_local {
-                    self.emit_opcode(OP_LOAD_LOCAL);
-                } else {
-                    self.emit_opcode(OP_LOAD_GLOBAL);
+                // Handle special identifiers
+                match name.as_str() {
+                    "input" => {
+                        // "input" alone is like input()
+                        self.emit_opcode(OP_INPUT_STRING);
+                    }
+                    _ => {
+                        let (is_local, index) = self.resolve_identifier(name)?;
+                        if is_local {
+                            self.emit_opcode(OP_LOAD_LOCAL);
+                        } else {
+                            self.emit_opcode(OP_LOAD_GLOBAL);
+                        }
+                        self.emit_u32(index as u32);
+                    }
                 }
-                self.emit_u32(index as u32);
+            }
+            Expression::Input(input_type) => {
+                match input_type {
+                    crate::ast::InputType::String => { self.emit_opcode(OP_INPUT_STRING); },
+                    crate::ast::InputType::Int => { self.emit_opcode(OP_INPUT_INT); },
+                    crate::ast::InputType::Float => { self.emit_opcode(OP_INPUT_FLOAT); },
+                };
             }
             Expression::UnaryOp { op, expr } => {
                 self.compile_expression(expr)?;
@@ -337,23 +353,47 @@ impl Compiler {
                 self.emit_opcode(opcode);
             }
             Expression::FunctionCall { name, args } => {
-                // Compile arguments onto stack
-                for arg in args {
-                    self.compile_expression(arg)?;
+                // Handle built-in input functions
+                match name.as_str() {
+                    "input" => {
+                        if !args.is_empty() {
+                            return Err("input() takes no arguments".to_string());
+                        }
+                        self.emit_opcode(OP_INPUT_STRING);
+                    }
+                    "int" => {
+                        if !args.is_empty() {
+                            return Err("int() takes no arguments".to_string());
+                        }
+                        self.emit_opcode(OP_INPUT_INT);
+                    }
+                    "float" => {
+                        if !args.is_empty() {
+                            return Err("float() takes no arguments".to_string());
+                        }
+                        self.emit_opcode(OP_INPUT_FLOAT);
+                    }
+                    _ => {
+                        // Regular function call
+                        // Compile arguments onto stack
+                        for arg in args {
+                            self.compile_expression(arg)?;
+                        }
+                        
+                        // Load function
+                        let (is_local, idx) = self.resolve_identifier(name)?;
+                        if is_local {
+                            self.emit_opcode(OP_LOAD_LOCAL);
+                        } else {
+                            self.emit_opcode(OP_LOAD_GLOBAL);
+                        }
+                        self.emit_u32(idx as u32);
+                        
+                        // Call function
+                        self.emit_opcode(OP_CALL_FUNCTION);
+                        self.emit_u32(args.len() as u32);
+                    }
                 }
-                
-                // Load function
-                let (is_local, idx) = self.resolve_identifier(name)?;
-                if is_local {
-                    self.emit_opcode(OP_LOAD_LOCAL);
-                } else {
-                    self.emit_opcode(OP_LOAD_GLOBAL);
-                }
-                self.emit_u32(idx as u32);
-                
-                // Call function
-                self.emit_opcode(OP_CALL_FUNCTION);
-                self.emit_u32(args.len() as u32);
             }
             Expression::FunctionExpr { params, body } => {
                 // Emit JUMP to skip function body

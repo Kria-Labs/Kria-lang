@@ -1,0 +1,25 @@
+set x = 10
+set y = 20
+set sum = x + y
+
+print("=== Temel Operasyonlar ===")
+print(sum)
+
+set product = x * y
+print(product)
+
+set diff = y - x
+print(diff)
+
+set quotient = y / x
+print(quotient)
+
+set name = "Kria"
+print("Dil: ")
+print(name)
+
+set isActive = true
+print(isActive)
+
+set value = null
+print(value)

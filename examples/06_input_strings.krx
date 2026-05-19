@@ -1,0 +1,28 @@
+print("=== String Input Örnekleri ===")
+
+print("Adınız nedir?")
+set name = input
+print("Merhaba, ")
+print(name)
+
+print("Soyadınız nedir?")
+set surname = input
+print("Tam ad: ")
+print(name)
+print(" ")
+print(surname)
+
+print("Şehriniz?")
+set city = input
+print("Şehir: ")
+print(city)
+
+print("En sevdiğiniz renk?")
+set color = input
+print("Sevdiğiniz renk: ")
+print(color)
+
+print("Açıklama yazın:")
+set description = input
+print("Yazdığınız: ")
+print(description)

@@ -1,0 +1,69 @@
+print("=== Performans Ölçümleri ===")
+
+print("--- Basit Döngü Performansı (1M iterasyon) ---")
+set i = 0
+while (i < 1000000) {
+    set i = i + 1
+}
+print("Tamamlandı")
+
+print("--- Çarpı Tablosu Hesaplama ---")
+set table = 1
+while (table <= 100) {
+    set mult = 1
+    set product = 0
+    while (mult <= 100) {
+        set product = table * mult
+        set mult = mult + 1
+    }
+    set table = table + 1
+}
+print("10000 çarpım hesaplandı")
+
+print("--- Fibonacci Hesaplama (15. terim) ---")
+fn fib(n) {
+    if (n <= 1) {
+        return n
+    } else {
+        return fib(n - 1) + fib(n - 2)
+    }
+}
+
+set result = fib(15)
+print("fib(15) = ")
+print(result)
+
+print("--- Basit Toplamlar ---")
+set sum1 = 0
+set j = 1
+while (j <= 10000) {
+    set sum1 = sum1 + j
+    set j = j + 1
+}
+print("1-10000 toplamı: ")
+print(sum1)
+
+print("--- Nested Döngüler ---")
+set outer = 0
+while (outer < 100) {
+    set inner = 0
+    while (inner < 100) {
+        set inner = inner + 1
+    }
+    set outer = outer + 1
+}
+print("10000 nested iterasyon tamamlandı")
+
+print("--- Faktöriyel Hesaplama ---")
+fn factorial(n) {
+    if (n <= 1) {
+        return 1
+    } else {
+        return n * factorial(n - 1)
+    }
+}
+
+print("10! = ")
+print(factorial(10))
+
+print("--- Tüm testler tamamlandı ---")

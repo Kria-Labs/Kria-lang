@@ -1,5 +1,0 @@
-set x = 0
-while (x < 1000000) {
-    set x = x+1
-    print(x)
-}
