@@ -1,4 +1,4 @@
-print("=== Temel Fonksiyonlar ===")
+print("=== Basic Functions ===")
 
 fn add(a, b) {
     return a + b
@@ -9,14 +9,14 @@ fn multiply(x, y) {
 }
 
 fn greet(name) {
-    print("Merhaba, ")
+    print("Hello, ")
     print(name)
 }
 
-print("Toplama: ")
+print("Addition: ")
 print(add(5, 3))
 
-print("Çarpma: ")
+print("Multiplication: ")
 print(multiply(4, 7))
 
 greet("Kria")
@@ -28,7 +28,7 @@ fn calculate(x, y) {
     return sum + product + difference
 }
 
-print("Karmaşık hesap: ")
+print("Complex calculation: ")
 print(calculate(10, 5))
 
 fn get_max(a, b) {
@@ -39,7 +39,7 @@ fn get_max(a, b) {
     }
 }
 
-print("Maksimum: ")
+print("Maximum: ")
 print(get_max(15, 8))
 
 fn is_even(n) {
@@ -52,24 +52,24 @@ fn is_even(n) {
     }
 }
 
-print("15 çift mi? ")
+print("Is 15 even? ")
 print(is_even(15))
 
-print("20 çift mi? ")
+print("Is 20 even? ")
 print(is_even(20))
 
 set double = fn(x) {
     return x * 2
 }
 
-print("Anonim fonksiyon (double): ")
+print("Anonymous function (double): ")
 print(double(10))
 
 set power_of_three = fn(n) {
     return n * n * n
 }
 
-print("Küp: ")
+print("Cube: ")
 print(power_of_three(5))
 
 set create_multiplier = fn(factor) {
@@ -79,5 +79,5 @@ set create_multiplier = fn(factor) {
 }
 
 set times_three = create_multiplier(3)
-print("3 ile çarp: ")
+print("Multiply by 3: ")
 print(times_three(7))

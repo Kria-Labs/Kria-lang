@@ -1,7 +1,7 @@
-print("=== While Döngüleri ===")
+print("=== While Loops ===")
 
 set counter = 0
-print("Basit sayma:")
+print("Simple counting:")
 while (counter < 5) {
     print(counter)
     set counter = counter + 1
@@ -9,7 +9,7 @@ while (counter < 5) {
 
 set sum = 0
 set i = 1
-print("1'den 10'a kadar toplama:")
+print("Sum from 1 to 10:")
 while (i <= 10) {
     set sum = sum + i
     set i = i + 1
@@ -18,7 +18,7 @@ print(sum)
 
 set n = 5
 set factorial = 1
-print("5! hesapla:")
+print("Calculate 5!:")
 while (n > 1) {
     set factorial = factorial * n
     set n = n - 1
@@ -28,7 +28,7 @@ print(factorial)
 set power = 1
 set base = 2
 set exponent = 8
-print("2 üzeri 8 hesapla:")
+print("Calculate 2 to the power of 8:")
 while (exponent > 0) {
     set power = power * base
     set exponent = exponent - 1
@@ -37,7 +37,7 @@ print(power)
 
 set even_sum = 0
 set num = 2
-print("2'den 20'ye kadar çift sayılar topla:")
+print("Sum even numbers from 2 to 20:")
 while (num <= 20) {
     set even_sum = even_sum + num
     set num = num + 2

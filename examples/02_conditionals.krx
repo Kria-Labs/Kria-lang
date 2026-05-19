@@ -1,9 +1,9 @@
-print("=== Koşullu İfadeler (if/else/elseif) ===")
+print("=== Conditional Statements (if/else/elseif) ===")
 
 set age = 25
 
 if (age >= 18) {
-    print("Yetişkin")
+    print("Adult")
 }
 
 set score = 75
@@ -25,12 +25,12 @@ if (score >= 90) {
 set number = 42
 
 if (number > 50) {
-    print("50'den büyük")
+    print("Greater than 50")
 } else {
     if (number > 25) {
-        print("25 ile 50 arasında")
+        print("Between 25 and 50")
     } else {
-        print("25'ten küçük")
+        print("Less than 25")
     }
 }
 
@@ -38,24 +38,24 @@ set x = 10
 set y = 20
 
 if (x < y) {
-    print("x daha küçük")
+    print("x is smaller")
 }
 
 if (x == y) {
-    print("Eşit")
+    print("Equal")
 } else {
-    print("Eşit değil")
+    print("Not equal")
 }
 
 set isTrue = true
 set isFalse = false
 
 if (isTrue) {
-    print("Doğru")
+    print("True")
 }
 
 if (isFalse) {
-    print("Bu gösterilmeyecek")
+    print("This will not be shown")
 } else {
-    print("Yanlış")
+    print("False")
 }

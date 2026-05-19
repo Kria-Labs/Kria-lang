@@ -1,4 +1,4 @@
-print("=== Algoritma Örnekleri ===")
+print("=== Algorithm Examples ===")
 
 fn is_prime(n) {
     if (n < 2) {
@@ -19,14 +19,14 @@ fn is_prime(n) {
     return true
 }
 
-print("Asal sayı kontrolü:")
-print("10 asal mı? ")
+print("Prime number check:")
+print("Is 10 prime? ")
 print(is_prime(10))
 
-print("17 asal mı? ")
+print("Is 17 prime? ")
 print(is_prime(17))
 
-print("2 asal mı? ")
+print("Is 2 prime? ")
 print(is_prime(2))
 
 fn gcd(a, b) {
@@ -39,10 +39,10 @@ fn gcd(a, b) {
     return a
 }
 
-print("EBOB(48, 18) = ")
+print("GCD(48, 18) = ")
 print(gcd(48, 18))
 
-print("EBOB(100, 50) = ")
+print("GCD(100, 50) = ")
 print(gcd(100, 50))
 
 fn lcm(a, b) {
@@ -50,7 +50,7 @@ fn lcm(a, b) {
     return (a * b) / gcd_val
 }
 
-print("EKOK(12, 18) = ")
+print("LCM(12, 18) = ")
 print(lcm(12, 18))
 
 fn sum_of_divisors(n) {
@@ -66,7 +66,7 @@ fn sum_of_divisors(n) {
     return sum
 }
 
-print("36'nın bölenlerinin toplamı: ")
+print("Sum of divisors of 36: ")
 print(sum_of_divisors(36))
 
 fn count_primes(limit) {
@@ -81,7 +81,7 @@ fn count_primes(limit) {
     return count
 }
 
-print("1-50'de kaç asal sayı var? ")
+print("How many primes from 1-50? ")
 print(count_primes(50))
 
 fn reverse_digits(n) {
@@ -95,7 +95,7 @@ fn reverse_digits(n) {
     return reversed
 }
 
-print("12345'in tersi: ")
+print("Reverse of 12345: ")
 print(reverse_digits(12345))
 
 fn is_palindrome(n) {
@@ -103,10 +103,10 @@ fn is_palindrome(n) {
     return reversed == n
 }
 
-print("12321 palindrom mu? ")
+print("Is 12321 a palindrome? ")
 print(is_palindrome(12321))
 
-print("12345 palindrom mu? ")
+print("Is 12345 a palindrome? ")
 print(is_palindrome(12345))
 
 fn fibonacci_sum(n) {
@@ -128,7 +128,7 @@ fn fibonacci(n) {
     }
 }
 
-print("İlk 10 fibonacci toplamı: ")
+print("Sum of first 10 fibonacci numbers: ")
 print(fibonacci_sum(10))
 
 fn power(base, exp) {

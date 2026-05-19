@@ -1,4 +1,4 @@
-print("=== İleri Seviye Fonksiyonlar ===")
+print("=== Advanced Functions ===")
 
 fn sum_range(start, end) {
     set total = 0
@@ -10,7 +10,7 @@ fn sum_range(start, end) {
     return total
 }
 
-print("1 ile 100 arasındaki toplam: ")
+print("Sum between 1 and 100: ")
 print(sum_range(1, 100))
 
 fn factorial(n) {
@@ -54,7 +54,7 @@ fn count_digits(n) {
     return count
 }
 
-print("123456 kaç hane? ")
+print("How many digits in 123456? ")
 print(count_digits(123456))
 
 fn apply_operation(a, b, op) {
@@ -95,7 +95,7 @@ fn filter_even_sum(limit) {
     return sum
 }
 
-print("1'den 50'ye çift sayıların toplamı: ")
+print("Sum of even numbers from 1 to 50: ")
 print(filter_even_sum(50))
 
 fn min(a, b) {
@@ -120,11 +120,11 @@ fn clamp(value, minimum, maximum) {
     return clamped
 }
 
-print("Clamp 150 (0-100 aralığında): ")
+print("Clamp 150 (0-100 range): ")
 print(clamp(150, 0, 100))
 
-print("Clamp -10 (0-100 aralığında): ")
+print("Clamp -10 (0-100 range): ")
 print(clamp(-10, 0, 100))
 
-print("Clamp 50 (0-100 aralığında): ")
+print("Clamp 50 (0-100 range): ")
 print(clamp(50, 0, 100))

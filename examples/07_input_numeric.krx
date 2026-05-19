@@ -1,37 +1,37 @@
-print("=== Sayısal Input Örnekleri ===")
+print("=== Numeric Input Examples ===")
 
-set number = input<int>("Bir tam sayı girin:")
-print("Girdiğiniz sayı: ")
+set number = input<int>("Enter an integer:")
+print("Number you entered: ")
 print(number)
 
-print("Sayı ile 10 farkı:")
+print("Difference with 10:")
 print(number - 10)
 
-print("Sayının 2 katı:")
+print("Double the number:")
 set doubled = number * 2
 print(doubled)
 
-set a = input<int>("İlk sayı:")
-set b = input<int>("İkinci sayı:")
+set a = input<int>("First number:")
+set b = input<int>("Second number:")
 
 set total = a + b
-print("Toplam: ")
+print("Sum: ")
 print(total)
 
 set product = a * b
-print("Çarpım: ")
+print("Product: ")
 print(product)
 
-set float_num = input<float>("Bir ondalık sayı girin:")
-print("Girdiğiniz ondalık sayı: ")
+set float_num = input<float>("Enter a decimal number:")
+print("Decimal number you entered: ")
 print(float_num)
 
 set float_doubled = float_num * 2
-print("2 katı: ")
+print("Double: ")
 print(float_doubled)
 
-set base = input<int>("Taban girin:")
-set exp = input<int>("Üs girin:")
+set base = input<int>("Enter base:")
+set exp = input<int>("Enter exponent:")
 
 set result = base * base
 set counter = 2
@@ -39,11 +39,11 @@ while (counter < exp) {
     set result = result * base
     set counter = counter + 1
 }
-print("Sonuç: ")
+print("Result: ")
 print(result)
 
-set x = input<float>("İlk ondalık:")
-set y = input<float>("İkinci ondalık:")
+set x = input<float>("First decimal:")
+set y = input<float>("Second decimal:")
 
-print("Toplamları: ")
+print("Their sum: ")
 print(x + y)
