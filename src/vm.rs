@@ -10,6 +10,7 @@ pub enum Value {
     Function {
         bytecode_offset: usize,
         num_params: u32,
+        upvalues: Vec<Value>,
     },
 }
 
@@ -20,8 +21,14 @@ impl std::fmt::Display for Value {
             Value::String(s) => write!(f, "{}", s),
             Value::Boolean(b) => write!(f, "{}", b),
             Value::Null => write!(f, "null"),
-            Value::Function { bytecode_offset, num_params } => {
-                write!(f, "<function at {:x}({} params)>", bytecode_offset, num_params)
+            Value::Function { bytecode_offset, num_params, upvalues } => {
+                write!(
+                    f,
+                    "<function at {:x}({} params, {} upvalues)>",
+                    bytecode_offset,
+                    num_params,
+                    upvalues.len()
+                )
             }
         }
     }
@@ -30,7 +37,7 @@ impl std::fmt::Display for Value {
 pub struct CallFrame {
     return_addr: usize,
     locals_start: usize,  // Index where local variables start in stack
-    num_locals: u32,
+    upvalues: Vec<Value>,
 }
 
 pub struct VM {
@@ -127,32 +134,50 @@ impl VM {
                         return Err("Store local outside function context".to_string());
                     }
                 }
-                OP_DEFINE_FUNCTION => {
-                    let global_idx = Bytecode::read_u32(code, ip) as usize;
-                    ip += 4;
+                OP_MAKE_CLOSURE => {
                     let func_offset = Bytecode::read_u32(code, ip) as usize;
                     ip += 4;
                     let num_params = Bytecode::read_u32(code, ip);
                     ip += 4;
-                    
-                    let func = Value::Function {
+                    let num_upvalues = Bytecode::read_u32(code, ip) as usize;
+                    ip += 4;
+
+                    let mut upvalues = Vec::with_capacity(num_upvalues);
+                    let parent_frame = self.call_stack.last();
+
+                    for _ in 0..num_upvalues {
+                        let kind = code[ip];
+                        ip += 1;
+                        let index = Bytecode::read_u32(code, ip) as usize;
+                        ip += 4;
+
+                        let value = match kind {
+                            CAPTURE_LOCAL => {
+                                let frame = parent_frame
+                                    .ok_or_else(|| "Closure capture requires active call frame".to_string())?;
+                                let idx = frame.locals_start + index;
+                                if idx >= self.stack.len() {
+                                    return Err("Closure local capture out of bounds".to_string());
+                                }
+                                self.stack[idx].clone()
+                            }
+                            CAPTURE_UPVALUE => {
+                                let frame = parent_frame
+                                    .ok_or_else(|| "Closure capture requires active call frame".to_string())?;
+                                frame.upvalues.get(index)
+                                    .cloned()
+                                    .ok_or_else(|| "Closure upvalue capture out of bounds".to_string())?
+                            }
+                            _ => return Err(format!("Unknown capture kind: {}", kind)),
+                        };
+                        upvalues.push(value);
+                    }
+
+                    self.stack.push(Value::Function {
                         bytecode_offset: func_offset,
                         num_params,
-                    };
-                    debug_assert!(global_idx < globals_len);
-                    unsafe { self.set_global_unchecked(global_idx, func); }
-                }
-                OP_FUNCTION_VALUE => {
-                    let func_offset = Bytecode::read_u32(code, ip) as usize;
-                    ip += 4;
-                    let num_params = Bytecode::read_u32(code, ip);
-                    ip += 4;
-                    
-                    let func = Value::Function {
-                        bytecode_offset: func_offset,
-                        num_params,
-                    };
-                    self.stack.push(func);
+                        upvalues,
+                    });
                 }
                 OP_CALL_FUNCTION => {
                     let num_args = Bytecode::read_u32(code, ip) as u32;
@@ -161,7 +186,7 @@ impl VM {
                     let func = self.pop()?;
                     
                     match func {
-                        Value::Function { bytecode_offset, num_params } => {
+                        Value::Function { bytecode_offset, num_params, upvalues } => {
                             if num_params != num_args {
                                 return Err(format!(
                                     "Function expects {} arguments, got {}",
@@ -173,13 +198,41 @@ impl VM {
                             let frame = CallFrame {
                                 return_addr: ip,
                                 locals_start,
-                                num_locals: num_params,
+                                upvalues,
                             };
                             
                             self.call_stack.push(frame);
                             ip = bytecode_offset;
                         }
                         _ => return Err("Attempted to call non-function value".to_string()),
+                    }
+                }
+                OP_LOAD_UPVALUE => {
+                    let index = Bytecode::read_u32(code, ip) as usize;
+                    ip += 4;
+
+                    if let Some(frame) = self.call_stack.last() {
+                        let val = frame.upvalues.get(index)
+                            .cloned()
+                            .ok_or_else(|| "Upvalue index out of bounds".to_string())?;
+                        self.stack.push(val);
+                    } else {
+                        return Err("Load upvalue outside function context".to_string());
+                    }
+                }
+                OP_STORE_UPVALUE => {
+                    let index = Bytecode::read_u32(code, ip) as usize;
+                    ip += 4;
+                    let val = self.pop()?;
+
+                    if let Some(frame) = self.call_stack.last_mut() {
+                        if index < frame.upvalues.len() {
+                            frame.upvalues[index] = val;
+                        } else {
+                            return Err("Upvalue index out of bounds".to_string());
+                        }
+                    } else {
+                        return Err("Store upvalue outside function context".to_string());
                     }
                 }
                 OP_LOOP_INC_LESS => {
@@ -447,10 +500,7 @@ impl VM {
                         std::io::stdin().read_line(&mut buffer)
                             .map_err(|e| format!("Input error: {}", e))?;
                         let trimmed = buffer.trim().to_string();
-                        
-                        // Try to match input to allowed types
-                        let mut accepted = false;
-                        
+
                         // Try integer first if permitted
                         if has_int {
                             if let Ok(num) = trimmed.parse::<i64>() {

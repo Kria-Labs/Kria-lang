@@ -4,13 +4,27 @@ use crate::bytecode::*;
 use crate::vm::Value;
 use std::sync::Arc;
 
+struct UpvalueCapture {
+    kind: u8,
+    index: u32,
+}
+
+struct CompileScope {
+    locals: HashMap<String, usize>,
+    upvalue_names: Vec<String>,
+    captures: Vec<UpvalueCapture>,
+}
+
+enum VarResolution {
+    Local(usize),
+    Upvalue(usize),
+    Global(usize),
+}
+
 pub struct Compiler {
     bytecode: Bytecode,
     globals: HashMap<String, usize>,
-    local_scope: Vec<HashMap<String, usize>>,  // Stack of local scopes
-    function_definitions: HashMap<String, (usize, u32)>, // function_name -> (bytecode_offset, num_params)
-    return_stack: Vec<usize>,  // Stack of jump positions for return statements
-    in_function: bool,
+    scope_stack: Vec<CompileScope>,
 }
 
 impl Compiler {
@@ -18,10 +32,7 @@ impl Compiler {
         Compiler {
             bytecode: Bytecode::new(),
             globals: HashMap::new(),
-            local_scope: Vec::new(),
-            function_definitions: HashMap::new(),
-            return_stack: Vec::new(),
-            in_function: false,
+            scope_stack: Vec::new(),
         }
     }
 
@@ -55,20 +66,102 @@ impl Compiler {
         self.emit_u32(idx);
     }
 
+    fn emit_load_var(&mut self, resolved: VarResolution) -> Result<(), String> {
+        match resolved {
+            VarResolution::Local(index) => {
+                self.emit_opcode(OP_LOAD_LOCAL);
+                self.emit_u32(index as u32);
+            }
+            VarResolution::Upvalue(index) => {
+                self.emit_opcode(OP_LOAD_UPVALUE);
+                self.emit_u32(index as u32);
+            }
+            VarResolution::Global(index) => {
+                self.emit_opcode(OP_LOAD_GLOBAL);
+                self.emit_u32(index as u32);
+            }
+        }
+        Ok(())
+    }
+
+    fn emit_store_var(&mut self, resolved: VarResolution) -> Result<(), String> {
+        match resolved {
+            VarResolution::Local(index) => {
+                self.emit_opcode(OP_STORE_LOCAL);
+                self.emit_u32(index as u32);
+            }
+            VarResolution::Upvalue(index) => {
+                self.emit_opcode(OP_STORE_UPVALUE);
+                self.emit_u32(index as u32);
+            }
+            VarResolution::Global(index) => {
+                self.emit_opcode(OP_STORE_GLOBAL);
+                self.emit_u32(index as u32);
+            }
+        }
+        Ok(())
+    }
+
+    fn emit_make_closure(&mut self, func_offset: u32, num_params: u32, captures: &[UpvalueCapture]) {
+        self.emit_opcode(OP_MAKE_CLOSURE);
+        self.emit_u32(func_offset);
+        self.emit_u32(num_params);
+        self.emit_u32(captures.len() as u32);
+        for cap in captures {
+            self.bytecode.emit_byte(cap.kind);
+            self.emit_u32(cap.index);
+        }
+    }
+
+    fn compile_function(
+        &mut self,
+        params: &[String],
+        body: &[Statement],
+    ) -> Result<(u32, u32, Vec<UpvalueCapture>), String> {
+        self.emit_opcode(OP_JUMP);
+        let skip_pos = self.emit_u32(0);
+
+        let func_offset = self.bytecode.code.len() as u32;
+
+        self.scope_stack.push(CompileScope {
+            locals: HashMap::new(),
+            upvalue_names: Vec::new(),
+            captures: Vec::new(),
+        });
+
+        for (i, param) in params.iter().enumerate() {
+            self.scope_stack
+                .last_mut()
+                .unwrap()
+                .locals
+                .insert(param.clone(), i);
+        }
+
+        self.compile_block(body)?;
+
+        if !matches!(body.last(), Some(Statement::Return(_))) {
+            self.emit_opcode(OP_NULL);
+            self.emit_opcode(OP_RETURN);
+        }
+
+        let scope = self.scope_stack.pop().unwrap();
+        let captures = scope.captures;
+
+        let after_func = self.bytecode.code.len();
+        self.patch_u32(skip_pos, after_func as u32);
+
+        Ok((func_offset, params.len() as u32, captures))
+    }
+
     fn compile_statement(&mut self, statement: &Statement) -> Result<(), String> {
         match statement {
             Statement::Assignment { name, value } => {
                 if self.compile_special_assignment(name, value)?.is_some() {
                     return Ok(());
                 }
-                let (is_local, index) = self.resolve_identifier(name)?;
+                let resolved = self.resolve_identifier(name)?;
                 self.compile_expression(value)?;
-                if is_local {
-                    self.emit_opcode(OP_STORE_LOCAL);
-                } else {
-                    self.emit_opcode(OP_STORE_GLOBAL);
-                }
-                self.emit_u32(index as u32);
+                self.emit_store_var(resolved)?;
             }
             Statement::Print(expr) => {
                 self.compile_expression(expr)?;
@@ -104,12 +197,10 @@ impl Compiler {
                 }
             }
             Statement::While { condition, body } => {
-                // Try to emit combined loop instruction
                 if let Some(_) = self.try_compile_combined_while(condition, body)? {
                     return Ok(());
                 }
 
-                // Fallback: standard while loop
                 let loop_start = self.bytecode.code.len();
                 self.compile_expression(condition)?;
                 self.emit_opcode(OP_JUMP_IF_FALSE);
@@ -121,44 +212,10 @@ impl Compiler {
                 self.patch_u32(exit_jump_pos, loop_end as u32);
             }
             Statement::FunctionDef { name, params, body } => {
-                // Emit JUMP to skip function body
-                self.emit_opcode(OP_JUMP);
-                let skip_pos = self.emit_u32(0);  // placeholder for jump target
-                
-                // Record function offset (after the jump instruction)
-                let func_offset = self.bytecode.code.len();
+                let (func_offset, num_params, captures) = self.compile_function(params, body)?;
 
-                // Compile function body
-                self.local_scope.push(HashMap::new());
-                self.in_function = true;
-
-                for (i, param) in params.iter().enumerate() {
-                    self.local_scope.last_mut().unwrap().insert(
-                        param.clone(),
-                        i,
-                    );
-                }
-
-                self.compile_block(body)?;
-
-                // Ensure function returns something
-                if !matches!(body.last(), Some(Statement::Return(_))) {
-                    self.emit_opcode(OP_NULL);
-                    self.emit_opcode(OP_RETURN);
-                }
-
-                self.local_scope.pop();
-                self.in_function = false;
-
-                // Patch jump to skip over function body
-                let after_func = self.bytecode.code.len();
-                self.patch_u32(skip_pos, after_func as u32);
-                
-                // Now create and store function value in global
                 let global_idx = self.resolve_global(name);
-                self.emit_opcode(OP_FUNCTION_VALUE);
-                self.emit_u32(func_offset as u32);
-                self.emit_u32(params.len() as u32);
+                self.emit_make_closure(func_offset, num_params, &captures);
                 self.emit_opcode(OP_STORE_GLOBAL);
                 self.emit_u32(global_idx as u32);
             }
@@ -185,13 +242,11 @@ impl Compiler {
         condition: &Expression,
         body: &[Statement],
     ) -> Result<Option<()>, String> {
-        // Pattern: while (var < const) { var = var + 1 } → OP_LOOP_INC_LESS
         if let Expression::BinaryOp { left, op, right } = condition {
             if *op == BinaryOperator::LessThan {
                 if let (Expression::Identifier(cond_var), Expression::Literal(Literal::Number(limit))) =
                     (&**left, &**right)
                 {
-                    // Check if body is just: set var = var + 1
                     if body.len() == 1 {
                         if let Statement::Assignment { name, value } = &body[0] {
                             if name == cond_var {
@@ -223,14 +278,12 @@ impl Compiler {
                         }
                     }
 
-                    // Pattern: while (var < const) { set var = var + N } → OP_LESS_CONST_JUMP_IF_FALSE + OP_ADD_GLOBAL + OP_JUMP
-                    // Or any body: while (var < const) { ... } → OP_LESS_CONST_JUMP_IF_FALSE + body + OP_JUMP
                     let idx = self.resolve_global(cond_var);
                     let loop_start = self.bytecode.code.len();
                     self.emit_opcode(OP_LESS_CONST_JUMP_IF_FALSE);
                     self.emit_u32(idx as u32);
                     self.emit_i64(*limit);
-                    let exit_pos = self.emit_u32(0); // placeholder for jump target
+                    let exit_pos = self.emit_u32(0);
                     self.compile_block(body)?;
                     self.emit_opcode(OP_JUMP);
                     self.emit_u32(loop_start as u32);
@@ -303,21 +356,12 @@ impl Compiler {
                 self.emit_constant(val);
             }
             Expression::Identifier(name) => {
-                let (is_local, index) = self.resolve_identifier(name)?;
-                if is_local {
-                    self.emit_opcode(OP_LOAD_LOCAL);
-                } else {
-                    self.emit_opcode(OP_LOAD_GLOBAL);
-                }
-                self.emit_u32(index as u32);
+                let resolved = self.resolve_identifier(name)?;
+                self.emit_load_var(resolved)?;
             }
             Expression::Input { types, prompt } => {
-                // Compile prompt expression
                 self.compile_expression(prompt)?;
-                
-                // Emit input opcode with type flags
-                // Encode types as bitmask:
-                // bit 0: str, bit 1: int, bit 2: float
+
                 let mut type_mask: u8 = 0;
                 for input_type in types {
                     match input_type {
@@ -326,7 +370,7 @@ impl Compiler {
                         crate::ast::InputType::Float => type_mask |= 0x04,
                     }
                 }
-                
+
                 self.emit_opcode(OP_INPUT);
                 self.bytecode.emit_byte(type_mask);
             }
@@ -356,64 +400,69 @@ impl Compiler {
                 self.emit_opcode(opcode);
             }
             Expression::FunctionCall { name, args } => {
-                // Compile arguments onto stack
                 for arg in args {
                     self.compile_expression(arg)?;
                 }
-                
-                // Load function
-                let (is_local, idx) = self.resolve_identifier(name)?;
-                if is_local {
-                    self.emit_opcode(OP_LOAD_LOCAL);
-                } else {
-                    self.emit_opcode(OP_LOAD_GLOBAL);
-                }
-                self.emit_u32(idx as u32);
-                
-                // Call function
+
+                let resolved = self.resolve_identifier(name)?;
+                self.emit_load_var(resolved)?;
+
                 self.emit_opcode(OP_CALL_FUNCTION);
                 self.emit_u32(args.len() as u32);
             }
             Expression::FunctionExpr { params, body } => {
-                // Emit JUMP to skip function body
-                self.emit_opcode(OP_JUMP);
-                let skip_pos = self.emit_u32(0);  // placeholder
-                
-                let func_offset = self.bytecode.code.len();
-                
-                // Compile function body
-                self.local_scope.push(HashMap::new());
-                self.in_function = true;
-                
-                for (i, param) in params.iter().enumerate() {
-                    self.local_scope.last_mut().unwrap().insert(
-                        param.clone(),
-                        i,
-                    );
-                }
-                
-                self.compile_block(body)?;
-                
-                // Ensure function returns something
-                if !matches!(body.last(), Some(Statement::Return(_))) {
-                    self.emit_opcode(OP_NULL);
-                    self.emit_opcode(OP_RETURN);
-                }
-                
-                self.local_scope.pop();
-                self.in_function = false;
-                
-                // Patch jump to skip function body
-                let after_func = self.bytecode.code.len();
-                self.patch_u32(skip_pos, after_func as u32);
-                
-                // Create function value
-                self.emit_opcode(OP_FUNCTION_VALUE);
-                self.emit_u32(func_offset as u32);
-                self.emit_u32(params.len() as u32);
+                let (func_offset, num_params, captures) = self.compile_function(params, body)?;
+                self.emit_make_closure(func_offset, num_params, &captures);
             }
         }
         Ok(())
+    }
+
+    fn register_upvalue(&mut self, name: &str, kind: u8, index: u32) {
+        let scope = self.scope_stack.last_mut().unwrap();
+        scope.upvalue_names.push(name.to_string());
+        scope.captures.push(UpvalueCapture { kind, index });
+    }
+
+    fn resolve_identifier(&mut self, name: &str) -> Result<VarResolution, String> {
+        if self.scope_stack.is_empty() {
+            return Ok(VarResolution::Global(self.resolve_global(name)));
+        }
+
+        let current = self.scope_stack.len() - 1;
+
+        if let Some(&index) = self.scope_stack[current].locals.get(name) {
+            return Ok(VarResolution::Local(index));
+        }
+
+        if let Some(index) = self
+            .scope_stack[current]
+            .upvalue_names
+            .iter()
+            .position(|n| n == name)
+        {
+            return Ok(VarResolution::Upvalue(index));
+        }
+
+        for up in (0..current).rev() {
+            if let Some(&local_idx) = self.scope_stack[up].locals.get(name) {
+                self.register_upvalue(name, CAPTURE_LOCAL, local_idx as u32);
+                let index = self.scope_stack[current].upvalue_names.len() - 1;
+                return Ok(VarResolution::Upvalue(index));
+            }
+            if let Some(uv_idx) = self
+                .scope_stack[up]
+                .upvalue_names
+                .iter()
+                .position(|n| n == name)
+            {
+                self.register_upvalue(name, CAPTURE_UPVALUE, uv_idx as u32);
+                let index = self.scope_stack[current].upvalue_names.len() - 1;
+                return Ok(VarResolution::Upvalue(index));
+            }
+        }
+
+        Ok(VarResolution::Global(self.resolve_global(name)))
     }
 
     fn resolve_global(&mut self, name: &str) -> usize {
@@ -424,18 +473,5 @@ impl Compiler {
             self.globals.insert(name.to_string(), index);
             index
         }
-    }
-
-    fn resolve_identifier(&mut self, name: &str) -> Result<(bool, usize), String> {
-        // Check if identifier is in local scope
-        if let Some(locals) = self.local_scope.last() {
-            if let Some(&index) = locals.get(name) {
-                return Ok((true, index));  // (is_local, index)
-            }
-        }
-        
-        // Otherwise, resolve as global
-        let index = self.resolve_global(name);
-        Ok((false, index))  // (is_local, index)
     }
 }

@@ -43,8 +43,6 @@ pub enum Token {
     RParen,
     LBrace,
     RBrace,
-    LAngle,
-    RAngle,
     Comma,
     Newline,
     

@@ -5,9 +5,6 @@ edition = "2021"
 description = "Kria programming language"
 authors = ["Piotriox"]
 
-[dependencies]
-smallvec = "1.11"
-
 [profile.release]
 opt-level = 3
 lto = true

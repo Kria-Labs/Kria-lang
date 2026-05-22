@@ -11,9 +11,10 @@ A custom programming language written in Rust, featuring a flat bytecode VM with
 - Arithmetic operations (+, -, *, /)
 - Comparison operators: `==`, `!=`, `>`, `<`, `>=`, `<=`
 - Logical operators: `and`, `or`, `not`
-- Conditional branches: `if`, `elseif`, `else`
+- Conditional branches: `if`, `else`
 - Loops: `while`
 - **Functions** (named and anonymous/lambda)
+- **Closures** — nested functions capture outer parameters and upvalues (copy-on-create)
 - **Return statements** with values
 - **Function parameters** and local variable scoping
 - **Input operations**: read strings, integers, and floats from stdin
@@ -48,9 +49,9 @@ Source → Lexer → Parser → Compiler → Flat Bytecode + Function Metadata �
 
 | Test | Avg Execution Time |
 |------|-------------------|
-| `perf_test.krx` (1M loop) | ~12ms |
+| `performance.krx` (1M loop) | ~12ms |
 | `test.krx` (general features) | ~5ms |
-| `func_comprehensive_test.krx` (7 function tests) | ~1ms |
+| `benchmarks/bench_functions.krx` (function calls) | ~1ms |
 
 *Measured with `cargo build --release` on warm cache.*
 
@@ -156,6 +157,31 @@ fn sum_to(n) {
 print(sum_to(5))  // Output: 10 (0+1+2+3+4)
 ```
 
+### Closures
+
+Nested functions can use variables from enclosing functions. Values are **copied when the inner function is created** (not shared afterward).
+
+```kria
+set create_multiplier = fn(factor) {
+    return fn(x) {
+        return x * factor
+    }
+}
+
+set times_three = create_multiplier(3)
+print(times_three(7))  // Output: 21
+```
+
+Captured variables include:
+
+- Parameters of enclosing functions (e.g. `factor` above)
+- Variables already captured by an enclosing closure (nested closures chain captures)
+
+**Notes:**
+
+- Capture happens at creation time: if you `set x = 1`, then `set f = fn() { return x }`, then `set x = 2`, calling `f()` still returns `1`.
+- `set` inside a function body (other than parameters) still uses **global** storage; only parameters and captured names use closure locals/upvalues.
+
 ## Input Operations
 
 Kria provides a unified input system with type specifications:
@@ -198,17 +224,25 @@ print(" years old.")
 
 ## Installation
 
-### Windows (creates kria-setup.exe)
+### Windows (creates installer in `release/`)
 ```powershell
 # Requires NSIS: https://nsis.sourceforge.io/
-powershell scripts/build-windows.ps1
-# Run kria-setup.exe to install
+cargo build --release
+cd release
+makensis kria-setup.nsi
+# Run release\kria-1.0.0-windows-x86_64-setup.exe to install
 ```
 
-### Linux/macOS (creates kria-setup.sh)
+### Linux/macOS
 ```bash
-./scripts/build-linux.sh
-sudo ./dist/kria-setup.sh /usr/local
+./release/build.sh install
+# Binary is installed to ~/.kria/bin — add that directory to PATH if needed
+```
+
+To create a distributable archive instead:
+```bash
+./release/build.sh package
+# Creates release/kria-<version>-<os>-<arch>.tar.gz
 ```
 
 After installation, use:
