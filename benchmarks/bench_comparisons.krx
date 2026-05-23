@@ -1,0 +1,19 @@
+// Benchmark: Comparison operators
+
+set i = 0
+set count = 0
+
+while (i < 100000) {
+    if (i == 50000) {
+        set count = count + 1
+    }
+    if (i != 99999) {
+        set count = count + 1
+    }
+    if (i < 100000) {
+        set count = count + 1
+    }
+    set i = i + 1
+}
+
+print(count)

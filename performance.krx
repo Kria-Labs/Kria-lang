@@ -1,8 +1,0 @@
-// Performance test: Count from 1 to 1,000,000
-set counter = 0
-
-while (counter < 1000000) {
-    set counter = counter + 1
-}
-
-print(counter)

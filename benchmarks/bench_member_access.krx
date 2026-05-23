@@ -1,0 +1,16 @@
+// Benchmark: Member access (.length and object fields)
+
+set arr = [1, 2, 3, 4, 5]
+set obj = { x: 10, y: 20, z: 30 }
+set sum = 0
+set i = 0
+
+while (i < 100000) {
+    set sum = sum + arr.length
+    set sum = sum + obj.x
+    set sum = sum + obj.y
+    set sum = sum + obj.z
+    set i = i + 1
+}
+
+print(sum)

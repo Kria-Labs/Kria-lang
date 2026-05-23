@@ -1,0 +1,17 @@
+// Benchmark: Arrays
+// push, index read, and for-in iteration
+
+set arr = []
+set i = 0
+
+while (i < 50000) {
+    push(arr, i)
+    set i = i + 1
+}
+
+set sum = 0
+for item in arr {
+    set sum = sum + item
+}
+
+print(sum)

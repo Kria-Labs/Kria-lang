@@ -50,13 +50,26 @@ Source → Lexer → Parser → Compiler → Flat Bytecode + Function Metadata �
 
 ### Performance
 
-| Test | Avg Execution Time |
-|------|-------------------|
-| `performance.krx` (1M loop) | ~12ms |
-| `test.krx` (general features) | ~5ms |
-| `benchmarks/bench_functions.krx` (function calls) | ~1ms |
+Run the full benchmark suite (warmup + multiple runs, median/min/max/mean):
 
-*Measured with `cargo build --release` on warm cache.*
+```bash
+cargo build --release
+./benchmarks/benchmarks.sh
+# Results: benchmarks/benchmark_results.txt
+```
+
+Optional: install [hyperfine](https://github.com/sharkdp/hyperfine) for more stable timing (`cargo install hyperfine` or your package manager). The script uses hyperfine when available, otherwise falls back to bash + `/usr/bin/time`.
+
+Override run count: `BENCH_WARMUP=3 BENCH_RUNS=10 ./benchmarks/benchmarks.sh`
+
+| Category | Example benchmark | Typical median (release, warm cache) |
+|----------|-------------------|-------------------------------------|
+| Loops | `benchmarks/bench_loop_optimized.krx` (1M iter) | ~10–15ms |
+| Functions | `benchmarks/bench_functions.krx` | ~1–3ms |
+| Arrays / objects | `benchmarks/bench_arrays.krx`, `bench_objects.krx` | varies |
+| Closures | `benchmarks/bench_closures.krx` | varies |
+
+*Numbers depend on hardware; re-run `./benchmarks/benchmarks.sh` for your machine.*
 
 ## Building
 

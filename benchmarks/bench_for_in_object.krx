@@ -1,0 +1,14 @@
+// Benchmark: for key, value in object
+
+set obj = { a: 1, b: 2, c: 3, d: 4, e: 5 }
+set sum = 0
+set outer = 0
+
+while (outer < 5000) {
+    for key, value in obj {
+        set sum = sum + value
+    }
+    set outer = outer + 1
+}
+
+print(sum)

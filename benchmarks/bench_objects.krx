@@ -1,0 +1,15 @@
+// Benchmark: Objects
+// literal access, bracket assign, and property reads
+
+set user = { a: 1, b: 2, c: 3 }
+set sum = 0
+set i = 0
+
+while (i < 20000) {
+    user.a = user.a + 1
+    user["b"] = user.b + 1
+    set sum = sum + user.a + user.b + user.c
+    set i = i + 1
+}
+
+print(sum)

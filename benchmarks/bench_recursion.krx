@@ -1,5 +1,5 @@
-// Benchmark: Mixed Operations
-// Tests a combination of different operations
+// Benchmark: Recursion
+// Tests recursive function call overhead (Fibonacci 0..14)
 
 fn fibonacci(n) {
     if (n <= 1) {

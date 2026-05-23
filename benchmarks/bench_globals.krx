@@ -1,0 +1,13 @@
+// Benchmark: Global variable traffic
+
+set g = 0
+set i = 0
+
+while (i < 300000) {
+    set g = g + 1
+    set g = g - 1
+    set g = g + 1
+    set i = i + 1
+}
+
+print(g)

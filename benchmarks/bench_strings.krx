@@ -1,0 +1,11 @@
+// Benchmark: String concatenation
+
+set s = "a"
+set i = 0
+
+while (i < 10000) {
+    set s = s + "b"
+    set i = i + 1
+}
+
+print(i)
