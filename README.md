@@ -115,14 +115,21 @@ Results are written to [`benchmarks/benchmark_results.txt`](benchmarks/benchmark
 
 ## Install (binary)
 
-**Linux / macOS**
+**Linux / macOS** — from the repo root (or any directory):
 
 ```bash
-./release/build.sh install    # → ~/.kria/bin
-./release/build.sh package    # → release/kria-<version>-<os>-<arch>.tar.gz
+./release/build.sh install    # build + copy to ~/.kria/bin
 ```
 
-**Windows** — build with `cargo build --release`, then NSIS installer via `release/kria-setup.nsi` (see [`release/`](release/)).
+Then add to PATH if prompted:
+
+```bash
+export PATH="${PATH}:$HOME/.kria/bin"
+```
+
+Other commands: `./release/build.sh` (build only), `./release/build.sh package` (tarball in `release/`).
+
+**Windows** — `cargo build --release`, then NSIS via `release/kria-setup.nsi`.
 
 ---
 
