@@ -5,7 +5,7 @@
 <h1 align="center">Kria</h1>
 
 <p align="center">
-  A small, fast programming language — Rust bytecode VM, <code>.krx</code> sources, no semicolons.
+  A small, fast programming language — Rust bytecode VM, <code>.krx</code> sources.
 </p>
 
 <p align="center">
@@ -38,7 +38,7 @@ cargo build --release
 ./target/release/kria examples/13_imports/main.krx
 ```
 
-**REPL:** persistent session, auto-print for expressions, multi-line blocks, `:help` / `:reset` / `:exit`. Imports are not supported in the REPL yet.
+**REPL:** persistent session, auto-print for expressions, multi-line blocks, `:help` / `:reset` / `:exit`.
 
 ---
 
