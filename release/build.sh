@@ -38,10 +38,61 @@ usage() {
     echo ""
     echo "Usage:"
     echo "  ${SCRIPT_DIR}/build.sh              Build release binary"
-    echo "  ${SCRIPT_DIR}/build.sh install      Build and install to ${INSTALL_DIR}"
+    echo "  ${SCRIPT_DIR}/build.sh install      Build, install to ${INSTALL_DIR}, update shell PATH"
+    echo "  ${SCRIPT_DIR}/build.sh install --no-path   Install without editing shell rc files"
     echo "  ${SCRIPT_DIR}/build.sh package      Build and create tar.gz in release/"
     echo "  ${SCRIPT_DIR}/build.sh clean        Clean build artifacts"
     echo "  ${SCRIPT_DIR}/build.sh help         Show this help"
+}
+
+path_on_path() {
+    case ":${PATH}:" in
+        *":${INSTALL_DIR}:"*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Append PATH export to shell rc files if missing
+setup_shell_path() {
+    local line="export PATH=\"\${PATH}:${INSTALL_DIR}\""
+    local updated=0
+
+    for rc in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.profile"; do
+        [ -f "${rc}" ] || continue
+        if grep -Fq "${INSTALL_DIR}" "${rc}" 2>/dev/null; then
+            continue
+        fi
+        {
+            echo ""
+            echo "# Kria (${PROJECT_NAME})"
+            echo "${line}"
+        } >> "${rc}"
+        echo "[+] Added PATH to ${rc}"
+        updated=1
+    done
+
+    if [ -d "${HOME}/.config/fish/conf.d" ]; then
+        local fish_conf="${HOME}/.config/fish/conf.d/kria.fish"
+        if [ ! -f "${fish_conf}" ]; then
+            echo "fish_add_path ${INSTALL_DIR}" > "${fish_conf}"
+            echo "[+] Created ${fish_conf}"
+            updated=1
+        fi
+    fi
+
+    if [ "${updated}" -eq 0 ] && path_on_path; then
+        echo "[+] ${INSTALL_DIR} is already on PATH."
+    elif [ "${updated}" -eq 0 ]; then
+        echo "[!] Could not find ~/.bashrc or ~/.zshrc to update."
+        echo "    Run manually: export PATH=\"\${PATH}:${INSTALL_DIR}\""
+    else
+        echo ""
+        echo "[!] Open a new terminal, or run:"
+        echo "    source ~/.bashrc    # bash"
+        echo "    source ~/.zshrc     # zsh"
+        echo ""
+        echo "    Then test: kria --help"
+    fi
 }
 
 do_build() {
@@ -83,21 +134,29 @@ do_build
 
 case "${1:-}" in
     install)
+        SETUP_PATH=1
+        if [ "${2:-}" = "--no-path" ]; then
+            SETUP_PATH=0
+        fi
+
         echo "[*] Installing to ${INSTALL_DIR}..."
         mkdir -p "${INSTALL_DIR}"
         cp "${BINARY_PATH}" "${INSTALL_DIR}/${BINARY_NAME}"
         chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
         echo "[+] Installed: ${INSTALL_DIR}/${BINARY_NAME}"
 
-        case ":${PATH}:" in
-            *":${INSTALL_DIR}:"*) ;;
-            *)
+        if [ "${SETUP_PATH}" -eq 1 ]; then
+            if path_on_path; then
+                echo "[+] ${INSTALL_DIR} is already on PATH in this shell."
+            else
                 echo ""
-                echo "[!] ${INSTALL_DIR} is not on your PATH. Add:"
-                echo "    export PATH=\"\${PATH}:${INSTALL_DIR}\""
-                echo "    # persist (bash): echo 'export PATH=\"\${PATH}:${INSTALL_DIR}\"' >> ~/.bashrc"
-                ;;
-        esac
+                echo "[*] Updating shell config so \`kria\` works in new terminals..."
+                setup_shell_path
+            fi
+        else
+            echo ""
+            echo "[!] PATH not modified. Use full path: ${INSTALL_DIR}/kria"
+        fi
 
         echo ""
         echo "[*] Verifying..."

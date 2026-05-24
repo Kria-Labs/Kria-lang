@@ -121,7 +121,9 @@ Results are written to [`benchmarks/benchmark_results.txt`](benchmarks/benchmark
 ./release/build.sh install    # build + copy to ~/.kria/bin
 ```
 
-Then add to PATH if prompted:
+`install` updates `~/.bashrc` / `~/.zshrc` when needed. Open a **new terminal** or run `source ~/.bashrc`, then `kria --help`.
+
+If `kria` is still unknown in the current window:
 
 ```bash
 export PATH="${PATH}:$HOME/.kria/bin"
